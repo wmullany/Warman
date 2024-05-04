@@ -1,82 +1,304 @@
 #include <Servo.h>
+#include <math.h>
 
-Servo servo1;
-Servo servo2;
+int leftAngle = 0;    //Current left angle
+int rightAngle = 165;  //Current right angle
 
-unsigned long currentTime = 0;
-unsigned long previousTime = 0;
-unsigned long interval = 5000; // 5 seconds interval
+int leftHeight = 15;
+int rightHeight = 15;
 
-unsigned long actuatorActivationTime = 1000; // 1 second activation time for linear actuators
-unsigned long actuatorPreviousTime1 = 0;
-unsigned long actuatorPreviousTime2 = 0;
+Servo leftSpool;
+Servo rightSpool;
 
-int state = 0; // State variable to track the current state
+Servo leftRotate;
+Servo rightRotate;
 
-#define ACTUATOR_PIN_1 8 // Define the pin for linear actuator 1
-#define ACTUATOR_PIN_2 7 // Define the pin for linear actuator 2
+/*
+Getting around inability to use CPU delay in functions 
+*/
+void myDelay(int ms) {
+    int end = millis() + ms;
+    while (millis() < end) {}; // do nothing
+}
+
+/**
+ * Move right a servo smoothly from a start position to an end position.
+ *
+ * @param start Starting position of the servo in degrees.
+ * @param end Ending position of the servo in degrees.
+ */
+void moveRightServoSmooth(int start, int end) {
+
+  int pos = start;  // Initialize position to start
+  unsigned long previousMillis = millis();
+  ;
+  unsigned long delayMillis = 15;  // Delay between servo movements in milliseconds
+
+  // Determine direction of movement
+  int increment = (end > start) ? 1 : -1;
+
+  // Move servo towards the end position
+  while (pos != end) {
+
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - previousMillis >= delayMillis) {
+
+      pos += increment;        // Increment position
+      rightRotate.write(pos);  // Move servo to new position
+
+      if (abs(pos - start) <35 || abs(pos - end) < 35) {  // If near start or end, go slower.
+
+        delayMillis = 45;  // Adjust delay to control speed
+
+      } else {
+
+        delayMillis = 15;  // Adjust delay to control speed
+      }
+
+      previousMillis = currentMillis;
+    }
+  }
+
+  rightAngle = end;
+}
+
+/**
+ * Move left a servo smoothly from a start position to an end position.
+ *
+ * @param start Starting position of the servo in degrees.
+ * @param end Ending position of the servo in degrees.
+ */
+void moveLeftServoSmooth(int start, int end) {
+
+  int pos = start;  // Initialize position to start
+  unsigned long previousMillis = millis();
+  unsigned long delayMillis = 15;  // Delay between servo movements in milliseconds
+
+  // Determine direction of movement
+  int increment = (end > start) ? 1 : -1;
+
+  // Move servo towards the end position
+  while (pos != end) {
+
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - previousMillis >= delayMillis) {
+
+      pos += increment;       // Increment position
+      leftRotate.write(pos);  // Move servo to new position
+
+      if (abs(pos - start) < 40 || abs(pos - end) < 40) {  // If near start or end, go slower.
+
+        delayMillis = 25;  // Adjust delay to control speed
+
+      } else {
+
+        delayMillis = 15;  // Adjust delay to control speed
+      }
+
+      previousMillis = currentMillis;
+    }
+  }
+
+  leftAngle = end;
+}
+/*
+case LEFT_UP:
+      Serial.print("Left Up\n");
+      digitalWrite(13,HIGH);
+      digitalWrite(12,LOW);
+      break;
+    case LEFT_DOWN:
+      Serial.print("Left Down\n");
+      digitalWrite(13,LOW);
+      digitalWrite(12,HIGH);
+      break;
+*/
+void setLeftActuatorHeight(int start, int end) {
+
+  float strokeLength = 50;  //50mm stroke length
+  int speed = 5;           //15mm/s speed
+  float totalTimeFrom0to100 = strokeLength / speed;
+
+  float duration = 1000 * totalTimeFrom0to100 * abs(((float)start - (float)end) / 100);
+  int delay = round(duration);
+
+  Serial.println(totalTimeFrom0to100);
+  Serial.println(duration);
+
+  // Go up or go down
+  if (start < end) {
+
+    digitalWrite(13, HIGH);
+    digitalWrite(12, LOW);
+
+  } else if (start > end) {
+
+    digitalWrite(13, LOW);
+    digitalWrite(12, HIGH);
+  }
+
+  myDelay(duration);
+
+  digitalWrite(13, LOW);
+  digitalWrite(12, LOW);
+
+  leftHeight = end; 
+}
+
+/*
+// Lower Right Arm
+  digitalWrite(8,LOW);
+  digitalWrite(4,HIGH);
+  delay(1500);
+
+  // Stop Height Change
+  digitalWrite(8,LOW);
+  digitalWrite(4,LOW);
+*/
+
+void setRightActuatorHeight(int start, int end) {
+
+  float strokeLength = 50;  //50mm stroke length
+  int speed = 5;           //15mm/s speed
+  float totalTimeFrom0to100 = strokeLength / speed;
+
+  float duration = 1000 * totalTimeFrom0to100 * abs(((float)start - (float)end) / 100);
+  int delay = round(duration);
+
+  Serial.println(totalTimeFrom0to100);
+  Serial.println(duration);
+
+  // Go up or go down
+  if (start < end) {
+
+    digitalWrite(8, HIGH);
+    digitalWrite(4, LOW);
+
+  } else if (start > end) {
+
+    digitalWrite(8, LOW);
+    digitalWrite(4, HIGH);
+  }
+
+  myDelay(duration);
+
+  digitalWrite(8, LOW);
+  digitalWrite(4, LOW);
+
+  rightHeight = end; 
+}
+
+void leftArmExtend(unsigned long duration) {
+
+  leftSpool.write(180);
+  myDelay(duration);
+
+}
+
+void rightArmExtend(unsigned long duration) {
+
+  rightSpool.write(0);
+  myDelay(duration);
+}
+
+void leftArmRetract(unsigned long duration) {
+
+  leftSpool.write(0);
+  myDelay(duration);
+}
+
+void rightArmRetract(unsigned long duration) {
+
+  rightSpool.write(180);
+  myDelay(duration);  
+}
 
 void setup() {
-  servo1.attach(9);  // Attach servo1 to pin 9
-  servo2.attach(10); // Attach servo2 to pin 10
-  
-  pinMode(ACTUATOR_PIN_1, OUTPUT); // Set linear actuator 1 pin as output
-  pinMode(ACTUATOR_PIN_2, OUTPUT); // Set linear actuator 2 pin as output
-  
-  // Initialize servos to initial position
-  servo1.write(0);
-  servo2.write(0);
+  // put your setup code here, to run once:
+
+  Serial.begin(9600);
+
+  pinMode(13, OUTPUT);
+  pinMode(12, OUTPUT);
+
+  pinMode(8, OUTPUT);
+  pinMode(4, OUTPUT);
+
+  leftRotate.attach(10);
+  rightRotate.attach(9);
+
+  leftSpool.attach(6);
+  rightSpool.attach(5);
+
+  leftRotate.write(leftAngle);
+  rightRotate.write(rightAngle);
 }
 
 void loop() {
-  currentTime = millis(); // Update current time
+  // put your main code here, to run repeatedly:
+
+  //Initial angles get updated by the functions
+
+  /*
+    |-------------------------------------------------|      
+    |    1                  O                     4   |  
+    |                     |---|                       |   
+    |     2               |   |                  5    |   
+    |                     | R |                       |   
+    |    3                |---|                   6   |   
+    |                                                 | 
+    |-------------------------------------------------|      
   
-  // State machine to control servo movements and linear actuator activations
-  switch(state) {
-    case 0:
-      if (currentTime - previousTime >= interval) {
-        servo1.write(135);
-        servo2.write(45);
-        previousTime = currentTime;
-        state++;
-      }
-      break;
-    case 1:
-      if (currentTime - previousTime >= interval) {
-        servo1.write(90);
-        servo2.write(90);
-        previousTime = currentTime;
-        state++;
-      }
-      break;
-    case 2:
-      if (currentTime - previousTime >= interval) {
-        servo1.write(45);
-        servo2.write(135);
-        previousTime = currentTime;
-        state++;
-      }
-      break;
-    case 3:
-      // Activate linear actuator 1 for 1 second during the 5-second interval
-      if (currentTime - previousTime <= actuatorActivationTime) {
-        digitalWrite(ACTUATOR_PIN_1, HIGH);
-      } else {
-        digitalWrite(ACTUATOR_PIN_1, LOW);
-        actuatorPreviousTime1 = currentTime; // Reset previous time for next iteration
-        state++;
-      }
-      break;
-    case 4:
-      // Activate linear actuator 2 for 1 second during the 5-second interval
-      if (currentTime - actuatorPreviousTime1 <= actuatorActivationTime) {
-        digitalWrite(ACTUATOR_PIN_2, HIGH);
-      } else {
-        digitalWrite(ACTUATOR_PIN_2, LOW);
-        state = 0; // Reset state machine after completing the sequence
-        previousTime = currentTime; // Reset previous time for next iteration
-      }
-      break;
-  }
-  break; 
+
+  */
+  
+  //Collect First+Fourth Ball
+  moveLeftServoSmooth(leftAngle, 45);
+  moveRightServoSmooth(rightAngle, 120);
+
+  //Extend Arms
+  rightArmExtend(1000); 
+  leftArmExtend(1000);
+
+  //Collect Ball and Lift Arms
+  delay(1000); 
+  setLeftActuatorHeight(leftHeight, leftHeight + 20); 
+  setRightActuatorHeight(rightHeight, rightHeight + 20); 
+
+  //Retract Arms
+  rightArmRetract(1000); 
+  leftArmRetract(1000);
+  
+  //Collect Second+Fifth Ball
+  moveLeftServoSmooth(leftAngle, 90);
+  moveRightServoSmooth(leftAngle, 90);
+
+  //Extend Arms
+  rightArmExtend(1000); 
+  leftArmExtend(1000);
+
+  //Collect Ball and Lift Arms
+  delay(1000); 
+  setLeftActuatorHeight(leftHeight, leftHeight + 20); 
+  setRightActuatorHeight(rightHeight, rightHeight + 20); 
+
+  //Retract Arms
+  rightArmRetract(1000); 
+  leftArmRetract(1000);
+  
+  //Collect Third+Sixth Ball
+  moveLeftServoSmooth(leftAngle, 180);
+  moveRightServoSmooth(leftAngle, 90);
+
+  //Collect Ball and Lift Arms
+  delay(1000); 
+  setLeftActuatorHeight(leftHeight, leftHeight + 20); 
+  setRightActuatorHeight(rightHeight, rightHeight + 20); 
+
+  //Retract Arms
+  rightArmRetract(1000); 
+  leftArmRetract(1000);
+  
 }
