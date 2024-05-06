@@ -13,9 +13,6 @@ Servo rightSpool;
 Servo leftRotate;
 Servo rightRotate;
 
-/*
-Getting around inability to use CPU delay in functions 
-*/
 void myDelay(int ms) {
     int end = millis() + ms;
     while (millis() < end) {}; // do nothing
@@ -90,11 +87,11 @@ void moveLeftServoSmooth(int start, int end) {
 
       if (abs(pos - start) < 40 || abs(pos - end) < 40) {  // If near start or end, go slower.
 
-        delayMillis = 25;  // Adjust delay to control speed
+        delayMillis = 40;  // Adjust delay to control speed
 
       } else {
 
-        delayMillis = 15;  // Adjust delay to control speed
+        delayMillis = 30;  // Adjust delay to control speed
       }
 
       previousMillis = currentMillis;
@@ -118,7 +115,7 @@ case LEFT_UP:
 void setLeftActuatorHeight(int start, int end) {
 
   float strokeLength = 50;  //50mm stroke length
-  int speed = 5;           //15mm/s speed
+  int speed = 15;           //15mm/s speed
   float totalTimeFrom0to100 = strokeLength / speed;
 
   float duration = 1000 * totalTimeFrom0to100 * abs(((float)start - (float)end) / 100);
@@ -192,8 +189,9 @@ void setRightActuatorHeight(int start, int end) {
 
 void leftArmExtend(unsigned long duration) {
 
-  leftSpool.write(180);
+  leftSpool.write(0);
   myDelay(duration);
+  leftSpool.write(90);
 
 }
 
@@ -205,8 +203,9 @@ void rightArmExtend(unsigned long duration) {
 
 void leftArmRetract(unsigned long duration) {
 
-  leftSpool.write(0);
+  leftSpool.write(180);
   myDelay(duration);
+  leftSpool.write(90);
 }
 
 void rightArmRetract(unsigned long duration) {
@@ -232,9 +231,11 @@ void setup() {
   leftSpool.attach(6);
   rightSpool.attach(5);
 
-  leftRotate.write(leftAngle);
+  leftRotate.write(0);
   rightRotate.write(rightAngle);
 }
+
+int i = 0; 
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -252,7 +253,7 @@ void loop() {
     |-------------------------------------------------|      
   
 
-  */
+  
   
   //Collect First+Fourth Ball
   moveLeftServoSmooth(leftAngle, 45);
@@ -301,4 +302,68 @@ void loop() {
   rightArmRetract(1000); 
   leftArmRetract(1000);
   
+  
+  delay(3000);
+  moveLeftServoSmooth(leftAngle, 0); 
+  delay(1000);
+  moveLeftServoSmooth(leftAngle, 45); 
+  delay(1000); 
+  moveLeftServoSmooth(leftAngle, 90); 
+  delay(1000);
+  moveLeftServoSmooth(leftAngle, 135); 
+  delay(1000); 
+  moveLeftServoSmooth(leftAngle, 180); 
+  delay(1000);
+  moveLeftServoSmooth(leftAngle, 90); 
+  delay(1000);
+  moveLeftServoSmooth(leftAngle, 45); 
+  delay(1000);
+  moveLeftServoSmooth(leftAngle, 0); 
+  delay(1000);
+  
+  
+  leftRotate.write(0);
+  delay(1000);
+  leftRotate.write(10);
+  delay(1000);
+  leftRotate.write(20);
+  delay(1000);
+  */
+  
+
+  if (i == 0) {  
+
+
+    // Move linear actuator to the bottom of its range
+    setLeftActuatorHeight(100, 0);
+    setLeftActuatorHeight(100, 0);
+
+    // Set Rotation Servo to 0
+    moveLeftServoSmooth(leftAngle, 0); 
+    delay(1000);
+
+    // Move to the first ball and collect
+    moveLeftServoSmooth(leftAngle, 70); 
+    delay(1000);
+    leftArmExtend(5500);
+    leftSpool.write(90); // Stop extending 
+    setLeftActuatorHeight(0, 43); // Pickup
+    delay(1000); 
+    leftArmRetract(2500); //Dont need this much
+
+    // Move to second ball
+    moveLeftServoSmooth(leftAngle, 109); 
+    delay(1000); 
+    setLeftActuatorHeight(43, 83);
+    delay(1000);
+
+    //Extend and pickup second ball
+    leftArmExtend(3000);
+    leftSpool.write(90);
+    setLeftActuatorHeight(43, 73);
+    delay(1000); 
+    leftArmRetract(3000);
+
+    i += 1; 
+  }
 }
