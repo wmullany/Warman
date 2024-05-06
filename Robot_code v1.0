@@ -1,3 +1,4 @@
+
 #include <Servo.h>
 
 Servo Left_Spool;
@@ -32,6 +33,29 @@ char Userinput(){
   return 0x00;
 }
 
+void moveLeftServoSmooth(int start, int end) {
+  int pos = start;  // Initialize position to start
+  unsigned long previousMillis = millis();
+  unsigned long delayMillis = 15;  // Delay between servo movements in milliseconds
+  // Determine direction of movement
+  int increment = (end > start) ? 1 : -1;
+  // Move servo towards the end position
+  while (pos != end) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= delayMillis) {
+      pos += increment;       // Increment position
+      Left_Rotate.write(pos);  // Move servo to new position
+      if (abs(pos - start) < 40 || abs(pos - end) < 40) {  // If near start or end, go slower.
+        delayMillis = 100;  // Adjust delay to control speed
+      } else {
+        delayMillis = 45;  // Adjust delay to control speed
+      }
+      previousMillis = currentMillis;
+    }
+  }
+  //leftAngle = end;
+}
+
 void setup(){
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -54,17 +78,23 @@ void loop(){
   switch(input){
     case LEFT_ANTICLOCKWISE:
       Serial.print("Left AntiClockwise\n");
-      Left_Angle += 3;
-      Left_Rotate.write(Left_Angle);
+      //Left_Angle += 3;
+      moveLeftServoSmooth(5, 90);
+      //Serial.print("Anti\n");
+      //Left_Angle = 90;
+      //Left_Rotate.write(Left_Angle);
       break;
     case LEFT_CLOCKWISE:
       Serial.print("Left Clockwise\n");
-      Left_Angle -= 3;
-      Left_Rotate.write(Left_Angle);
+      //Left_Angle -= 3;
+      moveLeftServoSmooth(90, 5);
+      //Serial.print("Clockwise\n");
+      //Left_Angle = 0;
+      //Left_Rotate.write(Left_Angle);
       break;
     case LEFT_UP:
       Serial.print("Left Up\n");
-      digitalWrite(13,HIGH);
+      digitalWrite(13,HIGH);   
       digitalWrite(12,LOW);
       break;
     case LEFT_DOWN:
@@ -82,12 +112,14 @@ void loop(){
       break;
     case RIGHT_ANTICLOCKWISE:
       Serial.print("Right AntiClockwise\n");
-      Right_Angle += 3;
+      //Right_Angle += 3;
+      Right_Angle = 180;
       Right_Rotate.write(Right_Angle);
       break;
     case RIGHT_CLOCKWISE:
       Serial.print("Right Clockwise\n");
-      Right_Angle -= 3;
+      //Right_Angle -= 3;
+      Right_Angle = 0;
       Right_Rotate.write(Right_Angle);
       break;
     case RIGHT_UP:
@@ -110,8 +142,8 @@ void loop(){
       break;
     case STOP:
       Serial.print("Stop All\n");
-      Left_Rotate.write(Left_Angle);
-      Right_Rotate.write(Right_Angle);
+      //Left_Rotate.write(Left_Angle);
+      //Right_Rotate.write(Right_Angle);
       Left_Spool.write(90);
       Right_Spool.write(90);
       digitalWrite(8,LOW);
