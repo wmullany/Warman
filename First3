@@ -1,0 +1,359 @@
+#include <Servo.h>
+#include <math.h>
+
+int leftAngle = 6;    //Current left angle
+int rightAngle = 175;  //Current right angle
+
+int leftHeight = 15;
+int rightHeight = 15;
+
+Servo leftSpool;
+Servo rightSpool;
+
+Servo leftRotate;
+Servo rightRotate;
+
+void myDelay(unsigned long ms) {
+    unsigned long end = millis() + ms;
+    while (millis() < end) {
+      Serial.print("Millis");
+      Serial.println(millis()); 
+      Serial.print("End");
+      Serial.println(end);
+    }; // do nothing
+
+}
+
+/**
+ * Move right a servo smoothly from a start position to an end position.
+ *
+ * @param start Starting position of the servo in degrees.
+ * @param end Ending position of the servo in degrees.
+ */
+void moveRightServoSmooth(int start, int end) {
+
+  int pos = start;  // Initialize position to start
+  unsigned long previousMillis = millis();
+  ;
+  unsigned long delayMillis = 15;  // Delay between servo movements in milliseconds
+
+  // Determine direction of movement
+  int increment = (end > start) ? 1 : -1;
+
+  // Move servo towards the end position
+  while (pos != end) {
+
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - previousMillis >= delayMillis) {
+
+      pos += increment;        // Increment position
+      rightRotate.write(pos);  // Move servo to new position
+
+      if (abs(pos - start) <35 || abs(pos - end) < 35) {  // If near start or end, go slower.
+
+        delayMillis = 45;  // Adjust delay to control speed
+
+      } else {
+
+        delayMillis = 30;  // Adjust delay to control speed
+      }
+
+      previousMillis = currentMillis;
+    }
+  }
+
+  rightAngle = end;
+}
+
+/**
+ * Move left a servo smoothly from a start position to an end position.
+ *
+ * @param start Starting position of the servo in degrees.
+ * @param end Ending position of the servo in degrees.
+ */
+void moveLeftServoSmooth(int start, int end) {
+
+  int pos = start;  // Initialize position to start
+  unsigned long previousMillis = millis();
+  unsigned long delayMillis = 15;  // Delay between servo movements in milliseconds
+
+  // Determine direction of movement
+  int increment = (end > start) ? 1 : -1;
+
+  // Move servo towards the end position
+  while (pos != end) {
+
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - previousMillis >= delayMillis) {
+
+      pos += increment;       // Increment position
+      leftRotate.write(pos);  // Move servo to new position
+
+      if (abs(pos - start) < 40 || abs(pos - end) < 40) {  // If near start or end, go slower.
+
+        delayMillis = 40; // Adjust delay to control speed
+
+      } else {
+
+        delayMillis = 30;  // Adjust delay to control speed
+      }
+
+      previousMillis = currentMillis;
+    }
+  }
+
+  leftAngle = end;
+}
+/*
+case LEFT_UP:
+      Serial.print("Left Up\n");
+      digitalWrite(13,HIGH);
+      digitalWrite(12,LOW);
+      break;
+    case LEFT_DOWN:
+      Serial.print("Left Down\n");
+      digitalWrite(13,LOW);
+      digitalWrite(12,HIGH);
+      break;
+*/
+void setLeftActuatorHeight(int start, int end) {
+
+  float strokeLength = 50;  //50mm stroke length
+  int speed = 15;           //15mm/s speed
+  float totalTimeFrom0to100 = strokeLength / speed;
+
+  float duration = 1000 * totalTimeFrom0to100 * abs(((float)start - (float)end)) / 100;
+
+  int delay = (unsigned long)duration;
+
+  // Go up or go down
+  if (start < end) {
+
+    digitalWrite(13, HIGH);
+    digitalWrite(12, LOW);
+
+  } else if (start > end) {
+
+    digitalWrite(13, LOW);
+    digitalWrite(12, HIGH);
+  }
+
+  myDelay(delay);
+
+  digitalWrite(13, LOW);
+  digitalWrite(12, LOW);
+
+  leftHeight = end; 
+}
+
+/*
+// Lower Right Arm
+  digitalWrite(8,LOW);
+  digitalWrite(4,HIGH);
+  delay(1500);
+
+  // Stop Height Change
+  digitalWrite(8,LOW);
+  digitalWrite(4,LOW);
+*/
+
+void setRightActuatorHeight(int start, int end) {
+
+  float strokeLength = 50;  //50mm stroke length
+  int speed = 15;           //15mm/s speed
+  float totalTimeFrom0to100 = strokeLength / speed;
+
+  float duration = 1000 * totalTimeFrom0to100 * abs(((float)start - (float)end)) / 100;
+  Serial.print("Duration ");
+  Serial.println(duration); 
+  int delay = (unsigned long)duration;
+  Serial.print("Delay ");
+  Serial.println(delay);
+
+  // Go up or go down
+  if (start < end) {
+
+    digitalWrite(8, HIGH);
+    digitalWrite(4, LOW);
+
+  } else if (start > end) {
+
+    digitalWrite(8, LOW);
+    digitalWrite(4, HIGH);
+  }
+
+  myDelay(delay);
+
+  digitalWrite(8, LOW);
+  digitalWrite(4, LOW);
+
+  rightHeight = end; 
+}
+
+void leftArmExtend(unsigned long duration) {
+
+  leftSpool.write(0);
+  myDelay(duration);
+  leftSpool.write(90);
+
+}
+
+void rightArmExtend(unsigned long duration) {
+
+  rightSpool.write(180);
+  myDelay(duration);
+  rightSpool.write(90);
+}
+
+void leftArmRetract(unsigned long duration) {
+
+  leftSpool.write(180);
+  myDelay(duration);
+  leftSpool.write(90);
+}
+
+void rightArmRetract(unsigned long duration) {
+
+  rightSpool.write(0);
+  myDelay(duration);  
+  rightSpool.write(90);
+}
+
+void setup() {
+  // put your setup code here, to run once:
+
+  Serial.begin(9600);
+
+  pinMode(13, OUTPUT);
+  pinMode(12, OUTPUT);
+
+  pinMode(8, OUTPUT);
+  pinMode(4, OUTPUT);
+
+  leftRotate.attach(10);
+  rightRotate.attach(9);
+
+  leftSpool.attach(6);
+  rightSpool.attach(5);
+
+  leftRotate.write(leftAngle);
+  rightRotate.write(rightAngle);
+
+  //rightArmExtend(100);
+}
+
+char Userinput(){
+
+  if(Serial.available()> 0)
+  {
+    return Serial.read();  
+  }
+  return 0x00;
+
+}
+
+bool executed = false; 
+char input; 
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  //Initial angles get updated by the functions
+
+  /*
+    |-------------------------------------------------|      
+    |    1                  O                     4   |  
+    |                     |---|                       |   
+    |     2               |   |                  5    |   
+    |                     | R |                       |   
+    |    3                |---|                   6   |   
+    |                                                 | 
+    |-------------------------------------------------|      
+  
+
+  
+  
+  */
+
+  if (!executed) { 
+
+    //setRightActuatorHeight(0, 10); 
+
+    /*Starting Sequence*/
+    rightArmExtend(1000);
+    delay(100); 
+    setLeftActuatorHeight(2, 0); 
+    rightSpool.write(93); 
+    moveRightServoSmooth(rightAngle, 170); 
+
+    /*Fourth Ball*/
+    rightArmExtend(3800);
+    moveRightServoSmooth(rightAngle, 117); 
+    setRightActuatorHeight(45, 0); 
+    rightArmExtend(1800);
+    delay(4000); 
+    setRightActuatorHeight(0, 60); 
+
+
+    /*Fifth Ball*/
+
+    //Move to the location
+    rightArmRetract(3000); 
+    moveRightServoSmooth(rightAngle, 79);  
+    myDelay(4000); 
+
+    //Move the actuator up
+    setRightActuatorHeight(0, 100); 
+    rightArmExtend(2700);
+    //delay(2500); 
+    setRightActuatorHeight(0, 30); 
+    delay(1000); 
+    rightArmRetract(2000); 
+    delay(2000); 
+    setRightActuatorHeight(66, 0);
+    Serial.println("Test"); 
+
+
+    /*Sixth Ball*/
+
+    moveRightServoSmooth(rightAngle, 54);
+    delay(5000); 
+    rightArmExtend(2000);
+    setRightActuatorHeight(30, 0); 
+    rightArmExtend(1000);
+    delay(2000); 
+    setRightActuatorHeight(0, 55);
+    rightArmRetract(3000); 
+    rightSpool.write(93);
+    /*Right Arm Closing Sequence*/
+    moveRightServoSmooth(rightAngle, 175);
+    rightSpool.write(89);
+     
+
+
+    
+
+    // moveRightServoSmooth(179, 118); 
+    // rightSpool.write(99); 
+    // delay(20000); 
+    // moveRightServoSmooth(rightAngle, 179); 
+    // delay(3000); 
+    // setRightActuatorHeight(0, 20);
+    // rightSpool.write(89); 
+    // //setRightActuatorHeight(0, 20);
+    executed = true; 
+
+  }
+
+
+
+
+
+
+
+
+
+
+}
