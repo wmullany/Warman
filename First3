@@ -279,22 +279,46 @@ void loop() {
 
   if (!executed) { 
 
+    delay(3000); 
+
     //setRightActuatorHeight(0, 10); 
 
     /*Starting Sequence*/
     rightArmExtend(1000);
     delay(100); 
-    setLeftActuatorHeight(2, 0); 
+    setLeftActuatorHeight(5, 0); 
     rightSpool.write(93); 
-    moveRightServoSmooth(rightAngle, 170); 
+    moveRightServoSmooth(rightAngle, 168); 
+    setRightActuatorHeight(15, 0); 
 
-    /*Fourth Ball*/
+    /*First ball and Fourth Ball*/
+
+    //Extend Right Arm and move to the fifth ball
     rightArmExtend(3800);
     moveRightServoSmooth(rightAngle, 117); 
-    setRightActuatorHeight(45, 0); 
-    rightArmExtend(1800);
-    delay(4000); 
+
+    //Extend Left Arm and move to the first ball
+    leftArmExtend(3800);  
+    moveLeftServoSmooth(leftAngle, 50); 
+
+    //Lower Right Arm and extend to collect ball
+    setRightActuatorHeight(60, 0); 
+    rightArmExtend(2000);
+
+    //Lower Left Arm and extend to collect ball
+    setLeftActuatorHeight(60, 0); 
+    leftArmExtend(1000);
+
+
+    //Pick up Fourth Ball with right arm
+    //delay(4000); 
     setRightActuatorHeight(0, 60); 
+    setLeftActuatorHeight(0, 60); 
+
+    moveLeftServoSmooth(leftAngle, 4);
+    leftSpool.write(92);
+
+    
 
 
     /*Fifth Ball*/
@@ -302,32 +326,38 @@ void loop() {
     //Move to the location
     rightArmRetract(3000); 
     moveRightServoSmooth(rightAngle, 79);  
-    myDelay(4000); 
+    //myDelay(4000); 
 
     //Move the actuator up
+    rightArmExtend(200);
     setRightActuatorHeight(0, 100); 
     rightArmExtend(2700);
-    //delay(2500); 
-    setRightActuatorHeight(0, 30); 
-    delay(1000); 
+    delay(2500); 
+    setRightActuatorHeight(0, 50); 
+    //delay(1000); 
     rightArmRetract(2000); 
-    delay(2000); 
-    setRightActuatorHeight(66, 0);
+    //delay(2000); 
+    setRightActuatorHeight(80, 0);
     Serial.println("Test"); 
 
 
     /*Sixth Ball*/
 
     moveRightServoSmooth(rightAngle, 54);
-    delay(5000); 
+    //delay(5000); 
     rightArmExtend(2000);
-    setRightActuatorHeight(30, 0); 
-    rightArmExtend(1000);
+    setRightActuatorHeight(47, 0); 
+    rightArmExtend(1900);
     delay(2000); 
-    setRightActuatorHeight(0, 55);
+    rightSpool.write(90);
+    setRightActuatorHeight(0, 68);
     rightArmRetract(3000); 
-    rightSpool.write(93);
+    rightSpool.write(94);
+
+
+
     /*Right Arm Closing Sequence*/
+    delay(10000);
     moveRightServoSmooth(rightAngle, 175);
     rightSpool.write(89);
      
