@@ -2,13 +2,11 @@
  * ================================================================
  * Project: Warman Challenge Robot
  * Description:
- * This code is designed to control a robot specifically tailored 
- * for navigating and manipulating pods within a grid environment, 
- * as required by the Warman Challenge. The robot utilises two 
- * servo-controlled arms and linear actuators for precise 
- * movements and positioning to pick up pods within 
- * the grid.
- *
+ * Designed to control a robot within a grid environment, 
+ * as required by the Warman Challenge. The robot has two 
+ * servo-controlled arms and linear actuators for to pick 
+ * up pods within the grid.
+ * 
  * Dependencies:
  * - Servo library for controlling servos.
  * - Math library for mathematical calculations.
